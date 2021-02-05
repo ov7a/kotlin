@@ -19,8 +19,6 @@ import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.MethodType
 import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashMap
 
 internal class Wrapper(val value: Any, override val irClass: IrClass, environment: IrInterpreterEnvironment) : Complex {
     override val fields: MutableList<Variable> = mutableListOf()
@@ -108,7 +106,7 @@ internal class Wrapper(val value: Any, override val irClass: IrClass, environmen
             "Array.kotlin.collections.copyToArrayOfAny(Boolean)" to "kotlin.collections.CollectionsKt",
         )
 
-        private fun IrDeclarationWithName.getSignature(): String {
+        private fun IrDeclaration.getSignature(): String {
             val fqName = this.fqName
             return when (this) {
                 is IrFunction -> {
@@ -123,7 +121,7 @@ internal class Wrapper(val value: Any, override val irClass: IrClass, environmen
             return intrinsicFunctionToHandler[this.getSignature()]
         }
 
-        fun mustBeHandledWithWrapper(declaration: IrDeclarationWithName): Boolean {
+        fun mustBeHandledWithWrapper(declaration: IrDeclaration): Boolean {
             val fqName = declaration.fqName
             return when (declaration) {
                 is IrFunction -> declaration.getSignature() in intrinsicFunctionToHandler

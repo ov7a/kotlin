@@ -137,6 +137,30 @@ abstract class IrElementTransformerVoid : IrElementTransformer<Nothing?> {
     open fun <T> visitConst(expression: IrConst<T>) = visitExpression(expression)
     final override fun <T> visitConst(expression: IrConst<T>, data: Nothing?) = visitConst(expression)
 
+    open fun visitStaticallyInitializedValue(expression: IrStaticallyInitializedValue) : IrStaticallyInitializedValue {
+        expression.transformChildren(this, null)
+        return expression
+    }
+
+    final override fun visitStaticallyInitializedValue(expression: IrStaticallyInitializedValue, data: Nothing?) =
+        visitStaticallyInitializedValue(expression)
+
+    open fun visitStaticallyInitializedObject(expression: IrStaticallyInitializedObject) = visitStaticallyInitializedValue(expression)
+    final override fun visitStaticallyInitializedObject(expression: IrStaticallyInitializedObject, data: Nothing?) =
+        visitStaticallyInitializedObject(expression)
+
+    open fun visitStaticallyInitializedConstant(expression: IrStaticallyInitializedConstant) = visitStaticallyInitializedValue(expression)
+    final override fun visitStaticallyInitializedConstant(expression: IrStaticallyInitializedConstant, data: Nothing?) =
+        visitStaticallyInitializedConstant(expression)
+
+    open fun visitStaticallyInitializedArray(expression: IrStaticallyInitializedArray) = visitStaticallyInitializedValue(expression)
+    final override fun visitStaticallyInitializedArray(expression: IrStaticallyInitializedArray, data: Nothing?) =
+        visitStaticallyInitializedArray(expression)
+
+    open fun visitStaticallyInitializedIntrinsic(expression: IrStaticallyInitializedIntrinsic) = visitStaticallyInitializedValue(expression)
+    final override fun visitStaticallyInitializedIntrinsic(expression: IrStaticallyInitializedIntrinsic, data: Nothing?) =
+        visitStaticallyInitializedIntrinsic(expression)
+
     open fun visitVararg(expression: IrVararg) = visitExpression(expression)
     final override fun visitVararg(expression: IrVararg, data: Nothing?) = visitVararg(expression)
 

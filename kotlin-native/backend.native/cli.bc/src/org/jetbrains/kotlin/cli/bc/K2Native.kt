@@ -329,6 +329,7 @@ class K2Native : CLICompiler<K2NativeCompilerArguments>() {
                     }
                 })
                 put(PROPERTY_LAZY_INITIALIZATION, arguments.propertyLazyInitialization)
+                putIfNotNull(ENABLE_RUNTIME_LOGGING, arguments.enableRuntimeLogging)
             }
         }
     }

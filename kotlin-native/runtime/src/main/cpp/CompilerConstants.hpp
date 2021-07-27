@@ -7,6 +7,7 @@
 #define RUNTIME_COMPILER_CONSTANTS_H
 
 #include <cstdint>
+#include <string_view>
 
 #include "Common.h"
 
@@ -15,6 +16,7 @@
 // These are defined by setRuntimeConstGlobals in IrToBitcode.kt
 extern "C" const int32_t KonanNeedDebugInfo;
 extern "C" const int32_t Kotlin_runtimeAssertsMode;
+extern "C" const char* const Kotlin_enableRuntimeLogging;
 
 namespace kotlin {
 namespace compiler {
@@ -42,6 +44,10 @@ ALWAYS_INLINE inline bool shouldContainDebugInfo() noexcept {
 
 ALWAYS_INLINE inline RuntimeAssertsMode runtimeAssertsMode() noexcept {
     return static_cast<RuntimeAssertsMode>(Kotlin_runtimeAssertsMode);
+}
+
+ALWAYS_INLINE inline std::string_view enableRuntimeLogging() noexcept {
+    return Kotlin_enableRuntimeLogging == nullptr ? std::string_view() : std::string_view(Kotlin_enableRuntimeLogging);
 }
 
 } // namespace compiler

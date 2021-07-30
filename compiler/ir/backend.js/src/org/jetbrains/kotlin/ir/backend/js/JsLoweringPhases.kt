@@ -545,6 +545,12 @@ private val delegateToPrimaryConstructorLoweringPhase = makeBodyLoweringPhase(
     prerequisite = setOf(primaryConstructorLoweringPhase)
 )
 
+private val annotationInstantiationLowering = makeJsModulePhase(
+    { ctxt -> AnnotationImplementationLowering { JsAnnotationImplementationTransformer(ctxt, it) } },
+    name = "AnnotationImplementation",
+    description = "Create synthetic annotations implementations and use them in annotations constructor calls"
+).toModuleLowering()
+
 private val annotationConstructorLowering = makeDeclarationTransformerPhase(
     ::AnnotationConstructorLowering,
     name = "AnnotationConstructorLowering",
@@ -731,6 +737,7 @@ private val cleanupLoweringPhase = makeBodyLoweringPhase(
 private val loweringList = listOf<Lowering>(
     scriptRemoveReceiverLowering,
     validateIrBeforeLowering,
+    annotationInstantiationLowering,
     expectDeclarationsRemovingPhase,
     stripTypeAliasDeclarationsPhase,
     jsCodeOutliningPhase,

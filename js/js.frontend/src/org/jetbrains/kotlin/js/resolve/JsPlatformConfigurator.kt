@@ -33,7 +33,6 @@ object JsPlatformConfigurator : PlatformConfiguratorBase(
             JsModuleCallChecker,
             JsDynamicCallChecker,
             JsDefinedExternallyCallChecker,
-            InstantiationOfAnnotationClassesCallChecker
         ),
         identifierChecker = JsIdentifierChecker
 ) {

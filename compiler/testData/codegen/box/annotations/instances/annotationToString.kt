@@ -1,5 +1,7 @@
 // IGNORE_BACKEND_FIR: JVM_IR
-// TARGET_BACKEND: JVM_IR
+// IGNORE_BACKEND: JVM
+// IGNORE_BACKEND: JS
+// IGNORE_BACKEND: NATIVE
 
 // WITH_RUNTIME
 // !LANGUAGE: +InstantiationOfAnnotationClasses
@@ -22,7 +24,6 @@ annotation class A(
     val bool: Boolean
 )
 
-@Retention(AnnotationRetention.RUNTIME)
 annotation class Anno(
     val s: String,
     val i: Int,
@@ -44,7 +45,8 @@ fun box(): String {
         A::class, emptyArray(), intArrayOf(1, 2), arrayOf(E.E0), arrayOf(Empty())
     )
     val s = anno.toString()
-    val target = "@test.Anno(s=OK, i=42, f=2.718281828, u=43, e=E0, a=@test.A(b=1, s=1, i=1, f=1.0, d=1.0, l=1, c=c, bool=true), " +
+    val targetJVM = "@test.Anno(s=OK, i=42, f=2.718281828, u=43, e=E0, a=@test.A(b=1, s=1, i=1, f=1.0, d=1.0, l=1, c=c, bool=true), " +
             "k=interface test.A (Kotlin reflection is not available), arr=[], intArr=[1, 2], arrOfE=[E0], arrOfA=[@test.Empty()])"
-    return if (s == target) "OK" else "FAILED, got string $s"
+    val targetJS = "@test.Anno(s=OK, i=42, f=2.718281828, u=43, e=E0, a=@test.A(b=1, s=1, i=1, f=1, d=1, l=1, c=c, bool=true), k=class A, arr=[...], intArr=[...], arrOfE=[...], arrOfA=[...])"
+    return if (s == targetJS || s == targetJVM) "OK" else "FAILED, got string $s"
 }

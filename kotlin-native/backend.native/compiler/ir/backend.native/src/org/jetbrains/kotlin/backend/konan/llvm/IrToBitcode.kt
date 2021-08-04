@@ -1002,6 +1002,8 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
                                         return evaluateSuspendableExpression  (value)
             is IrSuspensionPoint     -> return evaluateSuspensionPoint        (value)
             is IrClassReference ->      return evaluateClassReference         (value)
+            is IrStaticallyInitializedValue ->
+                                        return evaluateStaticInitialization   (value).llvm
             else                     -> {
                 TODO(ir2string(value))
             }
@@ -1810,6 +1812,76 @@ internal class CodeGeneratorVisitor(val context: Context, val lifetimes: Map<IrE
             IrConstKind.Double -> return Float64(value.value as Double)
         }
         TODO(ir2string(value))
+    }
+
+    //-------------------------------------------------------------------------//
+
+    private class IrStaticValueCacheKey(val value: IrStaticallyInitializedValue) {
+        override fun equals(other: Any?): Boolean {
+            if (other !is IrStaticValueCacheKey) return false
+            return value.contentEquals(other.value)
+        }
+
+        override fun hashCode(): Int {
+            return value.contentHashCode()
+        }
+    }
+
+    private val staticInitializationCache = mutableMapOf<IrStaticValueCacheKey, ConstValue>()
+
+    private fun evaluateStaticInitialization(value: IrStaticallyInitializedValue): ConstValue =
+            staticInitializationCache.getOrPut(IrStaticValueCacheKey(value)) {
+                evaluateStaticInitializationImpl(value)
+            }
+
+    private fun evaluateStaticInitializationImpl(value: IrStaticallyInitializedValue): ConstValue {
+        val symbols = context.ir.symbols
+        return when (value) {
+            is IrStaticallyInitializedConstant -> {
+                evaluateConst(value.value)
+            }
+            is IrStaticallyInitializedArray -> {
+                val clazz = value.type.getClass()!!
+                require(clazz.symbol == symbols.array || clazz.symbol in symbols.primitiveTypesToPrimitiveArrays.values) {
+                    "Statically initialized array should have array type"
+                }
+                context.llvm.staticData.createConstKotlinArray(
+                        value.type.getClass()!!,
+                        value.elements.map { evaluateStaticInitialization(it) }
+                )
+            }
+            is IrStaticallyInitializedObject -> {
+                val clazz = value.constructedType.getClass()!!
+                val needUnBoxing = value.constructedType.getInlinedClassNative() != null &&
+                        context.ir.symbols.getTypeConversion(value.constructedType, value.type) == null
+                if (needUnBoxing) {
+                    val unboxed = value.fields.values.singleOrNull()
+                            ?: error("Inlined class should have exactly one field")
+                    return evaluateStaticInitialization(unboxed)
+                }
+                context.llvm.staticData.createConstKotlinObject(
+                        clazz,
+                        *context.getLayoutBuilder(clazz).fields.map {
+                            evaluateStaticInitialization(value.fields[it.symbol]
+                                    ?: error("Bad statically initialized object: field ${it.kotlinFqName} value not set"))
+                        }.also {
+                            require(it.size == value.fields.size) { "Bad statically initialized object: too many fields" }
+                        }.toTypedArray()
+                )
+            }
+            is IrStaticallyInitializedIntrinsic -> {
+                val expression = value.expression
+                when ((expression as? IrCall)?.symbol) {
+                    symbols.getClassTypeInfo -> {
+                        with(codegen) {
+                            expression.getTypeArgument(0)!!.getClass()!!.typeInfoPtr
+                        }
+                    }
+                    else -> TODO("Statically initialized intrinsic ${value.dump()} is not implemented")
+                }
+            }
+            else -> TODO("Unimplemented IrStaticallyInitializedValue subclass ${value::class.qualifiedName}")
+        }
     }
 
     //-------------------------------------------------------------------------//

@@ -118,6 +118,7 @@ internal class KonanSymbols(
     val objCMethodImp = symbolTable.referenceClass(context.interopBuiltIns.objCMethodImp)
 
     val onUnhandledException = internalFunction("OnUnhandledException")
+    val terminateWithUnhandledException = internalFunction("TerminateWithUnhandledException")
 
     val interopNativePointedGetRawPointer =
             symbolTable.referenceSimpleFunction(context.interopBuiltIns.nativePointedGetRawPointer)

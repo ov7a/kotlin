@@ -136,6 +136,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val typeAliasCheckers: Set<FirTypeAliasChecker>
         get() = setOf(
             FirTopLevelTypeAliasChecker,
+            FirUnionTypeAliasChecker,
         )
 
     override val anonymousFunctionCheckers: Set<FirAnonymousFunctionChecker>

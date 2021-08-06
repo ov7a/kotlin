@@ -7,6 +7,7 @@
 
 #include "CompilerConstants.hpp"
 #include "GlobalData.hpp"
+#include "Logging.hpp"
 #include "MarkAndSweepUtils.hpp"
 #include "Memory.h"
 #include "RootSet.hpp"
@@ -63,6 +64,7 @@ void gc::SameThreadMarkAndSweep::ThreadData::SafePointExceptionUnwind() noexcept
 }
 
 void gc::SameThreadMarkAndSweep::ThreadData::SafePointAllocation(size_t size) noexcept {
+    RuntimeLogDebug({"gc"}, "SafePointAllocation size=%zu", size);
     size_t allocationOverhead =
             gc_.GetAllocationThresholdBytes() == 0 ? allocatedBytes_ : allocatedBytes_ % gc_.GetAllocationThresholdBytes();
     if (threadData_.suspensionData().suspendIfRequested()) {
@@ -92,7 +94,9 @@ void gc::SameThreadMarkAndSweep::ThreadData::PerformFullGC() noexcept {
     // TODO: These will actually need to be run on a separate thread.
     // TODO: Cannot use `threadData_` here, because there's no way to transform `mm::ThreadData` into `MemoryState*`.
     AssertThreadState(ThreadState::kRunnable);
+    RuntimeLogDebug({"gc"}, "PerformFullGC start running finalizers");
     finalizerQueue.Finalize();
+    RuntimeLogDebug({"gc"}, "PerformFullGC finished running finalizers");
 }
 
 void gc::SameThreadMarkAndSweep::ThreadData::OnOOM(size_t size) noexcept {
@@ -100,6 +104,7 @@ void gc::SameThreadMarkAndSweep::ThreadData::OnOOM(size_t size) noexcept {
 }
 
 void gc::SameThreadMarkAndSweep::ThreadData::SafePointRegular(size_t weight) noexcept {
+    RuntimeLogDebug({"gc"}, "SafePointRegular weight=%zu", weight);
     size_t counterOverhead = gc_.GetThreshold() == 0 ? safePointsCounter_ : safePointsCounter_ % gc_.GetThreshold();
     if (threadData_.suspensionData().suspendIfRequested()) {
         safePointsCounter_ = 0;
@@ -121,13 +126,16 @@ gc::SameThreadMarkAndSweep::SameThreadMarkAndSweep() noexcept {
 }
 
 mm::ObjectFactory<gc::SameThreadMarkAndSweep>::FinalizerQueue gc::SameThreadMarkAndSweep::PerformFullGC() noexcept {
+    RuntimeLogDebug({"gc"}, "PerformFullGC");
     bool didSuspend = mm::SuspendThreads();
     if (!didSuspend) {
+        RuntimeLogDebug({"gc"}, "PerformFullGC failed to suspend threads");
         // Somebody else suspended the threads, and so ran a GC.
         // TODO: This breaks if suspension is used by something apart from GC.
         return {};
     }
 
+    RuntimeLogDebug({"gc"}, "PerformFullGC suspended threads");
     KStdVector<ObjHeader*> graySet;
     for (auto& thread : mm::GlobalData::Instance().threadRegistry().LockForIter()) {
         // TODO: Maybe it's more efficient to do by the suspending thread?
@@ -145,10 +153,15 @@ mm::ObjectFactory<gc::SameThreadMarkAndSweep>::FinalizerQueue gc::SameThreadMark
         }
     }
 
+    RuntimeLogDebug({"gc"}, "PerformFullGC begin marking on root set of size=%zu", graySet.size());
     gc::Mark<MarkTraits>(std::move(graySet));
+    RuntimeLogDebug({"gc"}, "PerformFullGC begin sweeping");
     auto finalizerQueue = gc::Sweep<SweepTraits>(mm::GlobalData::Instance().objectFactory());
+    RuntimeLogDebug({"gc"}, "PerformFullGC finished sweeping");
 
     mm::ResumeThreads();
+
+    RuntimeLogDebug({"gc"}, "PerformFullGC resumed threads");
 
     return finalizerQueue;
 }

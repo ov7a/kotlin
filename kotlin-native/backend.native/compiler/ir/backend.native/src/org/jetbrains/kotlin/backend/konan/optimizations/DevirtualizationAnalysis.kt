@@ -1218,14 +1218,14 @@ internal object DevirtualizationAnalysis {
                         }
 
                         is DataFlowIR.Node.FieldRead -> {
-                            val type = node.field.type.resolved()
+                            val type = node.type.resolved()
                             if (entryPoint == null && type.isFinal)
                                 addInstantiatingClass(type)
                             readField(node.field, type)
                         }
 
                         is DataFlowIR.Node.FieldWrite -> {
-                            val type = node.field.type.resolved()
+                            val type = node.type.resolved()
                             if (entryPoint == null && type.isFinal)
                                 addInstantiatingClass(type)
                             writeField(node.field, type, edgeToConstraintNode(node.value))

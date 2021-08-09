@@ -6,7 +6,20 @@
 #include "Logging.hpp"
 
 #include <array>
+#if __has_include(<optional>)
 #include <optional>
+#elif __has_include(<experimental/optional>)
+// TODO: Remove when wasm32 is gone.
+#include <experimental/optional>
+namespace std {
+template <typename T>
+using optional = std::experimental::optional<T>;
+inline constexpr auto nullopt = std::experimental::nullopt;
+}
+#else
+#error "No <optional>"
+#endif
+
 
 #include "Format.h"
 #include "KAssert.h"

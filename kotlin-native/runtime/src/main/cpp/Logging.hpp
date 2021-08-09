@@ -8,7 +8,18 @@
 
 #include <cstdarg>
 #include <initializer_list>
+#if __has_include(<string_view>)
 #include <string_view>
+#elif __has_include(<experimental/string_view>)
+// TODO: Remove when wasm32 is gone.
+#include <xlocale.h>
+#include <experimental/string_view>
+namespace std {
+using string_view = std::experimental::string_view;
+}
+#else
+#error "No <string_view>"
+#endif
 
 #include "CompilerConstants.hpp"
 #include "cpp_support/Span.hpp"

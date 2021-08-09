@@ -23,6 +23,7 @@ import org.jetbrains.kotlin.builtins.KotlinBuiltIns;
 import org.jetbrains.kotlin.builtins.UnsignedTypes;
 import org.jetbrains.kotlin.descriptors.ClassDescriptor;
 import org.jetbrains.kotlin.descriptors.VariableDescriptor;
+import org.jetbrains.kotlin.name.FqName;
 import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.psi.KtParameter;
 import org.jetbrains.kotlin.psi.KtPsiUtil;
@@ -122,6 +123,10 @@ public class CompileTimeConstantUtils {
 
     public static boolean isArrayFunctionCall(@NotNull ResolvedCall<?> resolvedCall) {
         return ARRAY_CALL_NAMES.contains(DescriptorUtils.getFqName(resolvedCall.getCandidateDescriptor()).asString());
+    }
+
+    public static boolean isArrayFunctionCall(@NotNull FqName fqName) {
+        return ARRAY_CALL_NAMES.contains(fqName.asString());
     }
 
     public static boolean canBeReducedToBooleanConstant(

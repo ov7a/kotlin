@@ -482,6 +482,16 @@ internal class ModuleDFGBuilder(val context: Context, val irModule: IrModuleFrag
         private val nodes = mutableMapOf<IrExpression, Scoped<DataFlowIR.Node>>()
         private val variables = mutableMapOf<IrValueDeclaration, Scoped<DataFlowIR.Node.Variable>>()
         private val expressionsScopes = mutableMapOf<IrExpression, DataFlowIR.Node.Scope>()
+        private val fields = mutableMapOf<IrField, DataFlowIR.Field>()
+
+        private fun IrField.toDataFlowIRField() = fields.getOrPut(this) {
+            val name = name.asString()
+            DataFlowIR.Field(
+                    symbolTable.mapType(type),
+                    name.localHash.value,
+                    takeName { name }
+            )
+        }
 
         fun build(): DataFlowIR.Function {
             val isSuspend = declaration is IrSimpleFunction && declaration.isSuspend
@@ -839,16 +849,9 @@ internal class ModuleDFGBuilder(val context: Context, val irModule: IrModuleFrag
 
                             is IrGetField -> {
                                 val receiver = value.receiver?.let { expressionToEdge(it) }
-                                val receiverType = value.receiver?.let { symbolTable.mapType(it.type) }
-                                val name = value.symbol.owner.name.asString()
                                 DataFlowIR.Node.FieldRead(
                                         receiver,
-                                        DataFlowIR.Field(
-                                                receiverType,
-                                                symbolTable.mapType(value.symbol.owner.type),
-                                                name.localHash.value,
-                                                takeName { name }
-                                        ),
+                                        value.symbol.owner.toDataFlowIRField(),
                                         mapReturnType(value.type, value.symbol.owner.type),
                                         value
                                 )
@@ -856,16 +859,9 @@ internal class ModuleDFGBuilder(val context: Context, val irModule: IrModuleFrag
 
                             is IrSetField -> {
                                 val receiver = value.receiver?.let { expressionToEdge(it) }
-                                val receiverType = value.receiver?.let { symbolTable.mapType(it.type) }
-                                val name = value.symbol.owner.name.asString()
                                 DataFlowIR.Node.FieldWrite(
                                         receiver,
-                                        DataFlowIR.Field(
-                                                receiverType,
-                                                symbolTable.mapType(value.symbol.owner.type),
-                                                name.localHash.value,
-                                                takeName { name }
-                                        ),
+                                        value.symbol.owner.toDataFlowIRField(),
                                         expressionToEdge(value.value),
                                         mapReturnType(value.value.type, value.symbol.owner.type)
                                 )

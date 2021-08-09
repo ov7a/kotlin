@@ -108,12 +108,12 @@ internal object EscapeAnalysis {
 
     // A special marker field for external types implemented in the runtime (mainly, arrays).
     // The types being passed to the constructor are not used in the analysis - just put there anything.
-    private val intestinesField = DataFlowIR.Field(null, DataFlowIR.Type.Virtual, 1L, "inte\$tines")
+    private val intestinesField = DataFlowIR.Field(DataFlowIR.Type.Virtual, 1L, "inte\$tines")
 
     // A special marker field for return values.
     // Basically we substitute [return x] with [ret.v@lue = x].
     // This is done in order to not handle return parameter somewhat specially.
-    private val returnsValueField = DataFlowIR.Field(null, DataFlowIR.Type.Virtual, 2L, "v@lue")
+    private val returnsValueField = DataFlowIR.Field(DataFlowIR.Type.Virtual, 2L, "v@lue")
 
     // Roles in which particular object reference is being used.
     private enum class Role {

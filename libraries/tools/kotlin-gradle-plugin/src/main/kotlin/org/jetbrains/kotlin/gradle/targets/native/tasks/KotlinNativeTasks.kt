@@ -577,6 +577,9 @@ constructor(
     val linkerOpts: List<String>
         @Input get() = binary.linkerOpts
 
+    val binaryOptions: Map<String, String>
+        @Input get() = binary.binaryOptions
+
     val processTests: Boolean
         @Input get() = binary is TestExecutable
 
@@ -616,6 +619,9 @@ constructor(
         }
         linkerOpts.forEach {
             addArg("-linker-option", it)
+        }
+        binaryOptions.forEach { name, value ->
+            add("-XXBinary:$name=$value") // TODO: not actually tested yet.
         }
         exportLibraries.files.filterKlibsPassedToCompiler().forEach {
             add("-Xexport-library=${it.absolutePath}")

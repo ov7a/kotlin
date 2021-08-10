@@ -23,6 +23,8 @@ open class BinaryOption<T : Any>(
 object BinaryOptions {
     private val registeredOptionsByName = mutableMapOf<String, BinaryOption<*>>()
 
+    val runtimeAssertionsMode by option<RuntimeAssertsMode>()
+
     private fun register(option: BinaryOption<*>) {
         val previousOption = registeredOptionsByName[option.name]
         if (previousOption != null) {

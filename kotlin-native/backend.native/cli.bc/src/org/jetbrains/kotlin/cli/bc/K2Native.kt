@@ -338,6 +338,10 @@ class K2Native : CLICompiler<K2NativeCompilerArguments>() {
                         WorkerExceptionHandling.LEGACY
                     }
                 })
+
+                arguments.internalArguments.forEach {
+                    if (it is BinaryOptionInternalArgument<*>) put(it)
+                }
             }
         }
     }
@@ -368,6 +372,10 @@ class K2Native : CLICompiler<K2NativeCompilerArguments>() {
             }
         }
     }
+}
+
+private fun <T : Any> CompilerConfiguration.put(argument: BinaryOptionInternalArgument<T>) {
+    put(argument.option.compilerConfigurationKey, argument.value)
 }
 
 private fun selectFrameworkType(

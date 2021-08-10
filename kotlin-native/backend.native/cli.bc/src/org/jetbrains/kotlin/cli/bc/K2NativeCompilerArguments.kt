@@ -5,8 +5,8 @@
 
 package org.jetbrains.kotlin.cli.bc
 
-import org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments
-import org.jetbrains.kotlin.cli.common.arguments.Argument
+import org.jetbrains.kotlin.backend.konan.*
+import org.jetbrains.kotlin.cli.common.arguments.*
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.config.*
@@ -346,6 +346,9 @@ class K2NativeCompilerArguments : CommonCompilerArguments() {
             )
         }
     }
+
+    override val internalArgumentParsers: List<InternalArgumentParser<*>>
+        get() = super.internalArgumentParsers + BinaryOptionInternalArgumentParser
 }
 
 const val EMBED_BITCODE_FLAG = "-Xembed-bitcode"
@@ -356,3 +359,42 @@ const val CACHED_LIBRARY = "-Xcached-library"
 const val MAKE_CACHE = "-Xmake-cache"
 const val ADD_CACHE = "-Xadd-cache"
 const val SHORT_MODULE_NAME_ARG = "-Xshort-module-name"
+
+internal class BinaryOptionInternalArgument<T : Any>(
+        val option: BinaryOption<T>,
+        val value: T,
+        override val stringRepresentation: String
+) : InternalArgument
+
+// TODO: the compiler reports these arguments as unsafe, with a huge and scary warning (see reportUnsafeInternalArgumentsIfAny).
+//  should we disable this warning for all or some of -XXBinary: arguments?
+private object BinaryOptionInternalArgumentParser : AbstractInternalArgumentParser<BinaryOptionInternalArgument<*>>("Binary") {
+    override fun parseTail(tail: String, wholeArgument: String, errors: ArgumentParseErrors): BinaryOptionInternalArgument<*>? {
+        fun reportAndReturnNull(message: String): Nothing? {
+            errors.internalArgumentsParsingProblems += message
+            return null
+        }
+
+        if (tail.getOrNull(0) != ':') return reportAndReturnNull("Incorrect internal argument syntax, missing colon: $wholeArgument")
+
+        val indexOfEqualSign = tail.indexOf('=')
+        if (indexOfEqualSign == -1) {
+            return reportAndReturnNull("Incorrect internal argument syntax, missing '=': $wholeArgument")
+        }
+
+        val name = tail.substring(1, indexOfEqualSign)
+        val valueName = tail.substring(indexOfEqualSign + 1)
+
+        val option = BinaryOptions.getByName(name)
+                ?: return reportAndReturnNull("Unknown binary option '$name' in passed internal argument '$wholeArgument'")
+
+        fun <T : Any> parseValue(option: BinaryOption<T>): BinaryOptionInternalArgument<T>? {
+            val value = option.valueParser.parse(valueName) ?: return null
+            return BinaryOptionInternalArgument(option, value, wholeArgument)
+        }
+
+        return parseValue(option)
+                ?: reportAndReturnNull("Unknown value '$valueName' of code gen option '$name' in passed internal argument '$wholeArgument'")
+
+    }
+}

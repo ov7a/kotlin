@@ -51,4 +51,7 @@ abstract class CommonToolArguments : Freezable(), Serializable {
     var allWarningsAsErrors: Boolean by FreezableVar(false)
 
     var internalArguments: List<InternalArgument> by FreezableVar(emptyList())
+
+    open val internalArgumentParsers: List<InternalArgumentParser<*>>
+        get() = InternalArgumentParser.PARSERS
 }

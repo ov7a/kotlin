@@ -127,7 +127,7 @@ private fun <A : CommonToolArguments> parsePreprocessedCommandLineArguments(args
         }
 
         if (arg.startsWith(InternalArgumentParser.INTERNAL_ARGUMENT_PREFIX)) {
-            val matchingParsers = InternalArgumentParser.PARSERS.filter { it.canParse(arg) }
+            val matchingParsers = result.internalArgumentParsers.filter { it.canParse(arg) }
             assert(matchingParsers.size <= 1) { "Internal error: internal argument $arg can be ambiguously parsed by parsers ${matchingParsers.joinToString()}" }
 
             val parser = matchingParsers.firstOrNull()

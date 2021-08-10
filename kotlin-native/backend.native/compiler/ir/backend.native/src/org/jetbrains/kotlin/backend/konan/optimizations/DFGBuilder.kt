@@ -448,6 +448,16 @@ internal class ModuleDFGBuilder(val context: Context, val irModule: IrModuleFrag
     private val reinterpret = symbols.reinterpret
     private val objCObjectRawValueGetter = symbols.interopObjCObjectRawValueGetter
 
+    private val fields = mutableMapOf<IrField, DataFlowIR.Field>()
+    private fun IrField.toDataFlowIRField() = fields.getOrPut(this) {
+        val name = name.asString()
+        DataFlowIR.Field(
+                symbolTable.mapType(type),
+                1 + fields.size,
+                takeName { name }
+        )
+    }
+
     private class Scoped<out T : Any>(val value: T, val scope: DataFlowIR.Node.Scope)
 
     private inner class FunctionDFGBuilder(val expressionValuesExtractor: ExpressionValuesExtractor,
@@ -482,16 +492,6 @@ internal class ModuleDFGBuilder(val context: Context, val irModule: IrModuleFrag
         private val nodes = mutableMapOf<IrExpression, Scoped<DataFlowIR.Node>>()
         private val variables = mutableMapOf<IrValueDeclaration, Scoped<DataFlowIR.Node.Variable>>()
         private val expressionsScopes = mutableMapOf<IrExpression, DataFlowIR.Node.Scope>()
-        private val fields = mutableMapOf<IrField, DataFlowIR.Field>()
-
-        private fun IrField.toDataFlowIRField() = fields.getOrPut(this) {
-            val name = name.asString()
-            DataFlowIR.Field(
-                    symbolTable.mapType(type),
-                    name.localHash.value,
-                    takeName { name }
-            )
-        }
 
         fun build(): DataFlowIR.Function {
             val isSuspend = declaration is IrSimpleFunction && declaration.isSuspend

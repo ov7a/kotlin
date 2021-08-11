@@ -50,7 +50,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             FirConventionFunctionCallChecker,
             FirDivisionByZeroChecker,
             FirConstructorCallChecker,
-            FirSpreadOfNullableChecker
+            FirSpreadOfNullableChecker,
+            FirNamedVarargChecker,
         )
 
     override val tryExpressionCheckers: Set<FirTryExpressionChecker>

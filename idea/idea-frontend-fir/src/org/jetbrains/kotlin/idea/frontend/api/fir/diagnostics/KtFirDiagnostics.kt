@@ -929,12 +929,18 @@ sealed class KtFirDiagnostic<PSI : PsiElement> : KtDiagnosticWithPsi<PSI> {
 
     abstract class AssigningSingleElementToVarargInNamedFormFunctionError : KtFirDiagnostic<KtExpression>() {
         override val diagnosticClass get() = AssigningSingleElementToVarargInNamedFormFunctionError::class
-        abstract val type: KtType
     }
 
     abstract class AssigningSingleElementToVarargInNamedFormFunctionWarning : KtFirDiagnostic<KtExpression>() {
         override val diagnosticClass get() = AssigningSingleElementToVarargInNamedFormFunctionWarning::class
-        abstract val type: KtType
+    }
+
+    abstract class AssigningSingleElementToVarargInNamedFormAnnotationError : KtFirDiagnostic<KtExpression>() {
+        override val diagnosticClass get() = AssigningSingleElementToVarargInNamedFormAnnotationError::class
+    }
+
+    abstract class AssigningSingleElementToVarargInNamedFormAnnotationWarning : KtFirDiagnostic<KtExpression>() {
+        override val diagnosticClass get() = AssigningSingleElementToVarargInNamedFormAnnotationWarning::class
     }
 
     abstract class OverloadResolutionAmbiguity : KtFirDiagnostic<PsiElement>() {

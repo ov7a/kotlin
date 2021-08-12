@@ -596,10 +596,7 @@ abstract class KotlinCompile @Inject constructor(
 
     @get:Internal
     internal val defaultKotlinJavaToolchain: Provider<DefaultKotlinJavaToolchain> = objects
-        .propertyWithNewInstance(
-            project.gradle,
-            { this }
-        )
+        .propertyWithNewInstance(project.gradle)
 
     final override val kotlinJavaToolchainProvider: Provider<KotlinJavaToolchain> = defaultKotlinJavaToolchain.cast()
 
@@ -640,6 +637,11 @@ abstract class KotlinCompile @Inject constructor(
                 ignoreClasspathResolutionErrors
             )
         )
+
+        // This method could be called on configuration phase to calculate `filteredArgumentsMap` property
+        if (state.executing) {
+            defaultKotlinJavaToolchain.get().updateJvmTarget(this, args)
+        }
     }
 
     @get:Internal

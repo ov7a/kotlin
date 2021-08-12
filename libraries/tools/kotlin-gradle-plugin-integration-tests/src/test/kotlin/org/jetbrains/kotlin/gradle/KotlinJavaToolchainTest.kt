@@ -686,6 +686,55 @@ class KotlinJavaToolchainTest : KGPBaseTest() {
         }
     }
 
+    @DisplayName("Kotlin toolchain should support configuration cache")
+    @GradleTestVersions(minVersion = "6.7.1")
+    @GradleTest
+    internal fun testConfigurationCache(gradleVersion: GradleVersion) {
+        project(
+            projectName = "simple".fullProjectName,
+            gradleVersion = gradleVersion,
+            buildOptions = defaultBuildOptions.copy(
+                configurationCache = true,
+                configurationCacheProblems = BaseGradleIT.ConfigurationCacheProblems.FAIL
+            )
+        ) {
+            useToolchainExtension(15)
+
+            //language=properties
+            gradleProperties.append(
+                """
+                kotlin.jvm.target.validation.mode = error
+                """.trimIndent()
+            )
+
+            build("assemble")
+            build("assemble")
+        }
+    }
+
+    @DisplayName("Should work with configuration cache when toolchain is not configured")
+    @GradleTest
+    internal fun testConfigurationCacheNoToolchain(gradleVersion: GradleVersion) {
+        project(
+            projectName = "simple".fullProjectName,
+            gradleVersion = gradleVersion,
+            buildOptions = defaultBuildOptions.copy(
+                configurationCache = true,
+                configurationCacheProblems = BaseGradleIT.ConfigurationCacheProblems.FAIL
+            )
+        ) {
+            //language=properties
+            gradleProperties.append(
+                """
+                kotlin.jvm.target.validation.mode = error
+                """.trimIndent()
+            )
+
+            build("assemble")
+            build("assemble")
+        }
+    }
+
     private fun BuildResult.assertJdkHomeIsUsingJdk(
         javaexecPath: String
     ) = assertOutputContains("[KOTLIN] Kotlin compilation 'jdkHome' argument: $javaexecPath")

@@ -15784,6 +15784,11 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             runTest("compiler/testData/codegen/box/inlineClasses/passInlineClassWithSpreadOperatorToVarargs.kt");
         }
 
+        @TestMetadata("privateConstructorFunInterfaceMultiModule.kt")
+        public void testPrivateConstructorFunInterfaceMultiModule() throws Exception {
+            runTest("compiler/testData/codegen/box/inlineClasses/privateConstructorFunInterfaceMultiModule.kt");
+        }
+
         @TestMetadata("propertyLoweringOrder.kt")
         public void testPropertyLoweringOrder() throws Exception {
             runTest("compiler/testData/codegen/box/inlineClasses/propertyLoweringOrder.kt");

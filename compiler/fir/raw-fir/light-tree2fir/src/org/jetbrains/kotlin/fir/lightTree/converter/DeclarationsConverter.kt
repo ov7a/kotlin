@@ -1006,13 +1006,6 @@ class DeclarationsConverter(
         }
     }
 
-    private fun <T, K> T?.ifNull(callback: () -> K?): K? {
-        if (this == null) {
-            return callback()
-        }
-        return null
-    }
-
     /**
      * @see org.jetbrains.kotlin.parsing.KotlinParsing.parseProperty
      */
@@ -1072,7 +1065,7 @@ class DeclarationsConverter(
 
             typeParameterList?.let { firTypeParameters += convertTypeParameters(it, typeConstraints, symbol) }
 
-            backingField = fieldDeclaration.convertBackingField(symbol, modifiers)
+            backingField = fieldDeclaration.convertBackingField(symbol, modifiers, returnType, isVar)
 
             if (isLocal) {
                 this.isLocal = true
@@ -1122,7 +1115,7 @@ class DeclarationsConverter(
                             isExternal = modifiers.hasExternal()
                         }
 
-                    val hasExplicitBackingField = backingField != null
+                    val hasExplicitBackingField = backingField !is FirDefaultPropertyBackingField
                     val convertedAccessors = accessors.map {
                         convertGetterOrSetter(it, returnType, propertyVisibility, symbol, modifiers, hasExplicitBackingField)
                     }
@@ -1350,7 +1343,9 @@ class DeclarationsConverter(
     private fun LighterASTNode?.convertBackingField(
         propertySymbol: FirPropertySymbol,
         propertyModifiers: Modifier,
-    ): FirBackingField? {
+        propertyReturnType: FirTypeRef,
+        isVar: Boolean,
+    ): FirBackingField {
         var modifiers = Modifier()
         var returnType: FirTypeRef = implicitType
         var initializerExpression: LighterASTNode? = null
@@ -1377,14 +1372,24 @@ class DeclarationsConverter(
                 moduleData = baseModuleData
                 origin = FirDeclarationOrigin.Source
                 returnTypeRef = returnType
-                symbol = FirPropertyFieldDeclarationSymbol()
+                name = NAME_FOR_BACKING_FIELD
+                symbol = FirBackingFieldSymbol(CallableId(name))
                 this.status = status
                 annotations += modifiers.annotations
                 this.propertySymbol = propertySymbol
                 this.initializer = backingFieldInitializer
+                this.isVar = isVar
+                this.isVal = !isVar
             }
         } else {
-            null
+            FirDefaultPropertyBackingField(
+                moduleData = baseModuleData,
+                annotations = modifiers.annotations,
+                returnTypeRef = propertyReturnType.copyWithNewSourceKind(FirFakeSourceElementKind.DefaultAccessor),
+                isVar = isVar,
+                propertySymbol = propertySymbol,
+                status = status,
+            )
         }
     }
 

@@ -109,22 +109,28 @@ internal class FirModuleResolveStateImpl(
 
         if (ktDeclaration == nonLocalNamedDeclaration) return nonLocalFirForNamedDeclaration
 
-        firLazyDeclarationResolver.lazyResolveDeclaration(
-            firDeclarationToResolve = nonLocalFirForNamedDeclaration,
-            scopeSession = ScopeSession(),
-            moduleFileCache = (nonLocalFirForNamedDeclaration.moduleData.session as FirIdeSourcesSession).cache,
-            toPhase = FirResolvePhase.BODY_RESOLVE,
-            checkPCE = false, /*TODO*/
-        )
-        val firDeclaration = FirElementFinder.findElementIn<FirDeclaration>(nonLocalFirForNamedDeclaration) { firDeclaration ->
+        fun raiseError(): Nothing = error("FirDeclaration was not found for\n${ktDeclaration.getElementTextInContext()}")
+
+        //Local declaration should be proceeded via file structures in case of incremental analysis
+        val fileStructure =
+            fileStructureCache.getFileStructure(nonLocalNamedDeclaration.containingKtFile, rootModuleSession.cache)
+
+        val declarationStructure = fileStructure.getStructureElementFor(ktDeclaration)
+        val firMappedElement = declarationStructure.mappings.getElement(ktDeclaration, this)
+            ?: raiseError()
+
+        if (firMappedElement is FirDeclaration && firMappedElement.realPsi == ktDeclaration) return firMappedElement
+
+        val parentElement = declarationStructure.mappings.getFirOfClosestParent(ktDeclaration, this)
+            ?: raiseError()
+        val firDeclaration = FirElementFinder.findElementIn<FirDeclaration>(parentElement) { firDeclaration ->
             when (val realPsi = firDeclaration.realPsi) {
                 is KtObjectLiteralExpression -> realPsi.objectDeclaration == ktDeclaration
                 is KtLambdaExpression -> realPsi.functionLiteral == ktDeclaration
                 else -> realPsi == ktDeclaration
             }
         }
-        return firDeclaration
-            ?: error("FirDeclaration was not found for\n${ktDeclaration.getElementTextInContext()}")
+        return firDeclaration ?: raiseError()
     }
 
     @OptIn(InternalForInline::class)
@@ -151,14 +157,13 @@ internal class FirModuleResolveStateImpl(
             is FirIdeSourcesSession -> session.cache
             else -> return declaration
         }
-        firLazyDeclarationResolver.lazyResolveDeclaration(
+        return firLazyDeclarationResolver.lazyResolveDeclaration(
             firDeclarationToResolve = declaration,
             moduleFileCache = fileCache,
             scopeSession = ScopeSession(),
             toPhase = toPhase,
             checkPCE = true,
         )
-        return declaration
     }
 
     override fun <D : FirDeclaration> resolveFirToResolveType(declaration: D, type: ResolveType): D {
@@ -167,13 +172,12 @@ internal class FirModuleResolveStateImpl(
             is FirIdeSourcesSession -> session.cache
             else -> return declaration
         }
-        firLazyDeclarationResolver.lazyResolveDeclaration(
+        return firLazyDeclarationResolver.lazyResolveDeclaration(
             firDeclaration = declaration,
             moduleFileCache = fileCache,
             scopeSession = ScopeSession(),
             toResolveType = type,
             checkPCE = true,
         )
-        return declaration
     }
 }
